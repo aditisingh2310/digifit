@@ -11,5 +11,8 @@
     "react-webcam": "^7.2.0",
     "three": "^0.178.0",
     "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@types/fabric": "^5.3.10"
   }
 }
