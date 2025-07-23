@@ -12,6 +12,8 @@ import { PerformanceIndicator } from './components/PerformanceIndicator';
 import { PhotoUpload } from './components/PhotoUpload';
 import { ClothingCatalog } from './components/ClothingCatalog';
 import { VirtualTryOn } from './components/VirtualTryOn';
+import { RealTimeTryOn } from './components/RealTimeTryOn';
+import { AdvancedSizeGuide } from './components/AdvancedSizeGuide';
 import { AIPreferences } from './components/AIPreferences';
 import { LightAdjustment } from './components/LightAdjustment';
 import { ClothingItem, StylePreferences, LightingSettings } from './types';
@@ -20,7 +22,7 @@ import { mockUser } from './utils/mockData';
 function App() {
   const [userPhoto, setUserPhoto] = useState<string>('');
   const [selectedItems, setSelectedItems] = useState<ClothingItem[]>([]);
-  const [activeTab, setActiveTab] = useState<'tryon' | 'catalog' | 'preferences' | 'lighting'>('tryon');
+  const [activeTab, setActiveTab] = useState<'tryon' | 'realtime' | 'catalog' | 'sizeguide' | 'preferences' | 'lighting'>('tryon');
   const [preferences, setPreferences] = useState<StylePreferences>(mockUser.preferences);
   const [lightingSettings, setLightingSettings] = useState<LightingSettings>({
     brightness: 100,
@@ -32,6 +34,8 @@ function App() {
   const [isInitialized, setIsInitialized] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [showPerformanceIndicator, setShowPerformanceIndicator] = useState(true);
+  const [isRealTimeCameraActive, setIsRealTimeCameraActive] = useState(false);
+  const [bodyMeasurements, setBodyMeasurements] = useState<any>(null);
 
   // Initialize enhanced services
   React.useEffect(() => {
@@ -108,7 +112,9 @@ function App() {
 
   const tabs = [
     { id: 'tryon', label: 'Try-On', icon: <Camera size={20} /> },
+    { id: 'realtime', label: 'Live Camera', icon: <Camera size={20} /> },
     { id: 'catalog', label: 'Catalog', icon: <Shirt size={20} /> },
+    { id: 'sizeguide', label: 'Size Guide', icon: <Ruler size={20} /> },
     { id: 'preferences', label: 'AI Preferences', icon: <Sparkles size={20} /> },
     { id: 'lighting', label: 'Lighting', icon: <Sun size={20} /> }
   ];
@@ -231,6 +237,25 @@ function App() {
                 selectedItems={selectedItems}
                 lightingSettings={lightingSettings}
                 onRemoveItem={handleRemoveItem}
+                onSaveSession={(sessionData) => {
+                  // Extract body measurements from session data
+                  if (sessionData.bodyPose?.bodyMeasurements) {
+                    setBodyMeasurements(sessionData.bodyPose.bodyMeasurements);
+                  }
+                }}
+              />
+            )}
+
+            {activeTab === 'realtime' && (
+              <RealTimeTryOn
+                selectedItems={selectedItems}
+                lightingSettings={lightingSettings}
+                onCapture={(imageSrc) => {
+                  setUserPhoto(imageSrc);
+                  setActiveTab('tryon');
+                }}
+                isActive={isRealTimeCameraActive}
+                onToggle={() => setIsRealTimeCameraActive(!isRealTimeCameraActive)}
               />
             )}
 
@@ -241,6 +266,21 @@ function App() {
                   onItemSelect={handleItemSelect}
                   selectedItems={selectedItems}
                 />
+              </div>
+            )}
+
+            {activeTab === 'sizeguide' && selectedItems.length > 0 && (
+              <div className="space-y-6">
+                {selectedItems.map(item => (
+                  <AdvancedSizeGuide
+                    key={item.id}
+                    clothingItem={item}
+                    bodyMeasurements={bodyMeasurements}
+                    userPreferences={preferences}
+                    userId={mockUser.id}
+                    onSizeSelect={(size) => console.log(`Selected size ${size} for ${item.name}`)}
+                  />
+                ))}
               </div>
             )}
 
